@@ -1,0 +1,52 @@
+name: Publish schema
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'standard/schema/**'
+      - 'tools/**'
+
+jobs:
+  bundle-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Bundle schema fragments
+      run: python -m tools.bundle_schema --schema-dir standard/schema --root /schemas/coveragejson --out dist/bundle.json
+
+    - name: Convert to draft-07
+      run: |
+        python -m tools.convert_dialect dist/bundle.json --dialect draft-07 --out dist/draft-07/coveragejson.json
+        python -m tools.patch_schema dist/draft-07/coveragejson.json --set-id "https://schemas.opengis.net/covjson/1.0/coveragejson.json"
+
+    - name: Convert to 2019-09
+      run: |
+        python -m tools.convert_dialect dist/bundle.json --dialect 2019-09 --out dist/2019-09/coveragejson.json
+        python -m tools.patch_schema dist/2019-09/coveragejson.json --set-id "https://schemas.opengis.net/covjson/1.0/coveragejson.json"
+
+    - name: Convert to 2020-12
+      run: |
+        python -m tools.convert_dialect dist/bundle.json --dialect 2020-12 --out dist/2020-12/coveragejson.json
+        python -m tools.patch_schema dist/2020-12/coveragejson.json --set-id "https://schemas.opengis.net/covjson/1.0/coveragejson.json"
+
+    - name: Remove intermediate bundle
+      run: rm dist/bundle.json
+
+    - name: Publish to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        publish_branch: gh-pages
