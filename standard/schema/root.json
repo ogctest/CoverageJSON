@@ -1,0 +1,81 @@
+{
+    "$id": "/schemas/coveragejson",
+    "description": "A CoverageJSON object",
+    "type": "object",
+    "properties": {
+        "type": {
+            "enum": [
+                "Domain",
+                "NdArray",
+                "TiledNdArray",
+                "Coverage",
+                "CoverageCollection"
+            ]
+        }
+    },
+    "required": [
+        "type"
+    ],
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "Domain"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "/schemas/domain"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "NdArray"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "/schemas/ndArray"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "TiledNdArray"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "/schemas/tiledNdArray"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "Coverage"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "/schemas/coverage"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "CoverageCollection"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "/schemas/coverageCollection"
+            }
+        }
+    ]
+}

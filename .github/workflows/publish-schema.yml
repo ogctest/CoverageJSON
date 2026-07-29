@@ -1,0 +1,60 @@
+name: Build schema
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'standard/schema/**'
+      - 'tools/**'
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Bundle schema fragments
+      run: python -m tools.bundle_schema --schema-dir standard/schema --root /schemas/coveragejson --out build/bundle.json
+
+    - name: Convert to draft-07
+      run: |
+        python -m tools.convert_dialect build/bundle.json --dialect draft-07 --out standard/schema/build/draft-07/coveragejson.json
+        python -m tools.patch_schema standard/schema/build/draft-07/coveragejson.json --set-id "https://schemas.opengis.net/covjson/1.0/coveragejson.json"
+
+    - name: Convert to 2019-09
+      run: |
+        python -m tools.convert_dialect build/bundle.json --dialect 2019-09 --out standard/schema/build/2019-09/coveragejson.json
+        python -m tools.patch_schema standard/schema/build/2019-09/coveragejson.json --set-id "https://schemas.opengis.net/covjson/1.0/coveragejson.json"
+
+    - name: Convert to 2020-12
+      run: |
+        python -m tools.convert_dialect build/bundle.json --dialect 2020-12 --out standard/schema/build/2020-12/coveragejson.json
+        python -m tools.patch_schema standard/schema/build/2020-12/coveragejson.json --set-id "https://schemas.opengis.net/covjson/1.0/coveragejson.json"
+
+    - name: Remove intermediate bundle
+      run: rm -rf build
+
+    - name: Commit generated schemas
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add standard/schema/build/
+        if git diff --cached --quiet; then
+          echo "No changes to generated schemas"
+        else
+          git commit -m "build: regenerate bundled schemas from fragments"
+          git push
+        fi
